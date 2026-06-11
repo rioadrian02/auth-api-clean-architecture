@@ -1,11 +1,13 @@
 import express from 'express';
 import UserRepositoryPostgres from '../repositories/UserRepositoryPostgres.js';
-import BcryptPasswordHash from '../security/BcryptPasswordHash.js';
-import AddUserUseCase from '../../Applications/use_case/AddUserUseCase.js';
-import ClientError from '../../Commons/exceptions/ClientError.js';
 import AuthenticationRepositoryPostgres from '../repositories/AuthenticationRepositoryPostgres.js';
+import BcryptPasswordHash from '../security/BcryptPasswordHash.js';
 import JwtTokenManager from '../security/JwtTokenManager.js';
+import AddUserUseCase from '../../Applications/use_case/AddUserUseCase.js';
 import LoginUserUseCase from '../../Applications/use_case/LoginUserUseCase.js';
+import LogoutUserUseCase from '../../Applications/use_case/LogoutUserUseCase.js';
+import RefreshAuthenticationUseCase from '../../Applications/use_case/RefreshAuthenticationUseCase.js';
+import ClientError from '../../Commons/exceptions/ClientError.js';
 
 const createServer = () => {
     const app = express();
@@ -60,6 +62,50 @@ const createServer = () => {
                 }
             });
         } catch(error) {
+            return handleError(error, res);
+        }
+    });
+
+    // refresh token
+     app.put('/authentications', async (req, res) => {
+        try {
+            const authenticationRepository = new AuthenticationRepositoryPostgres();
+            const tokenManager = new JwtTokenManager();
+
+            const refreshAuthenticationUseCase = new RefreshAuthenticationUseCase({
+                authenticationRepository,
+                tokenManager,
+            });
+
+            const { accessToken } = await refreshAuthenticationUseCase.execute(req.body);
+
+            return res.status(200).json({
+                status: 'success',
+                data: { accessToken },
+            });
+
+        } catch (error) {
+            return handleError(error, res);
+        }
+    });
+
+    // DELETE /authentications — logout
+    app.delete('/authentications', async (req, res) => {
+        try {
+            const authenticationRepository = new AuthenticationRepositoryPostgres();
+
+            const logoutUserUseCase = new LogoutUserUseCase({
+                authenticationRepository,
+            });
+
+            await logoutUserUseCase.execute(req.body);
+
+            return res.status(200).json({
+                status: 'success',
+                message: 'Logout berhasil',
+            });
+
+        } catch (error) {
             return handleError(error, res);
         }
     });
