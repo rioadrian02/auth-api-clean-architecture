@@ -68,6 +68,36 @@ class UserRepositoryPostgres extends UserRepository {
 
         return result.rows[0].id;
     }
+
+    async getUserById(id) {
+        const query = {
+            text: 'SELECT id, username, fullname FROM users WHERE id=$1',
+            values: [id]
+        }
+
+        const result = await this._pool.query(query);
+
+        if(!result.rows[0]) {
+            throw new NotFoundError('Id tidak ditemukan');
+        }
+
+        return result.rows[0];
+    }
+
+    async updateFullnameById(id, fullname) {
+        const query = {
+            text: 'UPDATE users SET fullname = $1 WHERE id = $2 RETURNING id,username,fullname',
+            values: [fullname, id]
+        };
+
+        const result = await this._pool.query(query);
+
+        if(!result.rows[0]) {
+            throw new NotFoundError('Id tidak ditemukan');
+        }
+
+        return result.rows[0];
+    }
 }
 
 export default UserRepositoryPostgres;

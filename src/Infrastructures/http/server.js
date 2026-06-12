@@ -7,7 +7,9 @@ import AddUserUseCase from '../../Applications/use_case/AddUserUseCase.js';
 import LoginUserUseCase from '../../Applications/use_case/LoginUserUseCase.js';
 import LogoutUserUseCase from '../../Applications/use_case/LogoutUserUseCase.js';
 import RefreshAuthenticationUseCase from '../../Applications/use_case/RefreshAuthenticationUseCase.js';
+import DetailUserUseCase from '../../Applications/use_case/DetailUserUseCase.js';
 import ClientError from '../../Commons/exceptions/ClientError.js';
+import UpdateFullnameUseCase from '../../Applications/use_case/UpdateFullnameUseCase.js';
 
 const createServer = () => {
     const app = express();
@@ -110,6 +112,44 @@ const createServer = () => {
         }
     });
 
+    app.get('/users/:id', async (req, res) => {
+        try {
+            const userRepository = new UserRepositoryPostgres();
+
+            const detailUserUseCase = new DetailUserUseCase({ userRepository });
+
+            const user = await detailUserUseCase.execute(req.params);
+
+            return res.status(200).json({
+                status: 'success',
+                data: {
+                    user
+                }
+            });
+        } catch (error) {
+            return handleError(error, res);
+        }
+    });
+
+    app.put('/users/:id', async (req, res) => {
+        try {
+            const userRepository = new UserRepositoryPostgres();
+
+            const updateFullnameUseCase = new UpdateFullnameUseCase({ userRepository });
+
+            const user = await updateFullnameUseCase.execute(req.body, req.params);
+
+            return res.status(201).json({
+                status: 'success',
+                data: {
+                    user
+                }
+            });
+        } catch(error) {
+            return handleError(error, res);
+        }
+    });
+
     return app;
 }
 
@@ -121,12 +161,13 @@ const handleError = (error, res) => {
         });
     }
 
-    if(error.message.includes('REGISTER_USER.')) {
+    if (/^[A-Z_]+\.[A-Z_]+$/.test(error.message)) {
         return res.status(400).json({
             status: 'fail',
-            message: error.message
+            message: error.message,
         });
     }
+
 
     console.error(error);
     return res.status(500).json({
