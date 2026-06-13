@@ -1,15 +1,7 @@
 import express from 'express';
-import UserRepositoryPostgres from '../repositories/UserRepositoryPostgres.js';
-import AuthenticationRepositoryPostgres from '../repositories/AuthenticationRepositoryPostgres.js';
-import BcryptPasswordHash from '../security/BcryptPasswordHash.js';
-import JwtTokenManager from '../security/JwtTokenManager.js';
-import AddUserUseCase from '../../Applications/use_case/AddUserUseCase.js';
-import LoginUserUseCase from '../../Applications/use_case/LoginUserUseCase.js';
-import LogoutUserUseCase from '../../Applications/use_case/LogoutUserUseCase.js';
-import RefreshAuthenticationUseCase from '../../Applications/use_case/RefreshAuthenticationUseCase.js';
-import DetailUserUseCase from '../../Applications/use_case/DetailUserUseCase.js';
 import ClientError from '../../Commons/exceptions/ClientError.js';
-import UpdateFullnameUseCase from '../../Applications/use_case/UpdateFullnameUseCase.js';
+import container from '../container.js';
+
 
 const createServer = () => {
     const app = express();
@@ -18,14 +10,7 @@ const createServer = () => {
     // Post Users
     app.post('/users', async (req, res) => {
         try {
-            const userRepository = new UserRepositoryPostgres();
-            const passwordHash = new BcryptPasswordHash();
-
-            const addUser = new AddUserUseCase({
-                userRepository,
-                passwordHash
-            });
-
+            const addUser = container.getInstance('AddUserUseCase');
             const registeredUser = await addUser.execute(req.body);
 
             return res.status(201).json({
@@ -42,17 +27,7 @@ const createServer = () => {
     // post login
     app.post('/authentications', async (req, res) => {
         try {
-            const userRepository = new UserRepositoryPostgres();
-            const authenticationRepository = new AuthenticationRepositoryPostgres();
-            const passwordHash = new BcryptPasswordHash();
-            const tokenManager = new JwtTokenManager();
-
-            const loginUserUseCase = new LoginUserUseCase({
-                userRepository,
-                authenticationRepository,
-                tokenManager,
-                passwordHash,
-            });
+            const loginUserUseCase = container.getInstance('LoginUserUseCase');
 
             const { accessToken, refreshToken } = await loginUserUseCase.execute(req.body);
 
@@ -71,13 +46,7 @@ const createServer = () => {
     // refresh token
      app.put('/authentications', async (req, res) => {
         try {
-            const authenticationRepository = new AuthenticationRepositoryPostgres();
-            const tokenManager = new JwtTokenManager();
-
-            const refreshAuthenticationUseCase = new RefreshAuthenticationUseCase({
-                authenticationRepository,
-                tokenManager,
-            });
+            const refreshAuthenticationUseCase = container.getInstance('RefreshAuthenticationUseCase');
 
             const { accessToken } = await refreshAuthenticationUseCase.execute(req.body);
 
@@ -94,11 +63,7 @@ const createServer = () => {
     // DELETE /authentications — logout
     app.delete('/authentications', async (req, res) => {
         try {
-            const authenticationRepository = new AuthenticationRepositoryPostgres();
-
-            const logoutUserUseCase = new LogoutUserUseCase({
-                authenticationRepository,
-            });
+            const logoutUserUseCase = container.getInstance('LogoutUserUseCase');
 
             await logoutUserUseCase.execute(req.body);
 
@@ -114,9 +79,7 @@ const createServer = () => {
 
     app.get('/users/:id', async (req, res) => {
         try {
-            const userRepository = new UserRepositoryPostgres();
-
-            const detailUserUseCase = new DetailUserUseCase({ userRepository });
+            const detailUserUseCase = container.getInstance('DetailUserUseCase');
 
             const user = await detailUserUseCase.execute(req.params);
 
@@ -133,9 +96,7 @@ const createServer = () => {
 
     app.put('/users/:id', async (req, res) => {
         try {
-            const userRepository = new UserRepositoryPostgres();
-
-            const updateFullnameUseCase = new UpdateFullnameUseCase({ userRepository });
+            const updateFullnameUseCase = container.getInstance('UpdateFullnameUseCase');
 
             const user = await updateFullnameUseCase.execute(req.body, req.params);
 
