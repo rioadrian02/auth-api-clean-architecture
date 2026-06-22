@@ -1,4 +1,5 @@
 import container from "../../container.js";
+import logger from "../../logger/index.js";
 
 class AuthenticationsHandler {
     async login(req, res, next) {
@@ -6,6 +7,8 @@ class AuthenticationsHandler {
             const loginUserUseCase = container.getInstance('LoginUserUseCase');
 
             const { accessToken, refreshToken } = await loginUserUseCase.execute(req.body);
+
+            logger.info('User berhasil login', { username: req.body.username });
 
             return res.status(201).json({
                 status: 'success',
@@ -40,6 +43,8 @@ class AuthenticationsHandler {
             const logoutUserUseCase = container.getInstance('LogoutUserUseCase');
 
             await logoutUserUseCase.execute(req.body);
+
+            logger.info('User berhasil logout');
 
             return res.status(200).json({
                 status: 'success',
